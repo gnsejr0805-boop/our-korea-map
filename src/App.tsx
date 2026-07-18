@@ -11,6 +11,7 @@ import UsPage from './components/UsPage'
 import { supabase } from './lib/supabase'
 import {
   createTravelRecord,
+  deleteTravelRecord,
   fetchTravelRecords,
 } from './lib/travelRecords'
 import type {
@@ -433,12 +434,48 @@ function MapHome({
 type MemoriesPageProps = {
   records: CloudTravelRecord[]
   onAddMemory: () => void
+  onDeleteMemory: (
+    record: CloudTravelRecord,
+  ) => Promise<void>
 }
 
 function MemoriesPage({
   records,
   onAddMemory,
+  onDeleteMemory,
 }: MemoriesPageProps) {
+  const [deletingRecordId, setDeletingRecordId] =
+    useState('')
+
+  const [deleteError, setDeleteError] =
+    useState('')
+
+  const handleDelete = async (
+    record: CloudTravelRecord,
+  ) => {
+    const shouldDelete = window.confirm(
+      `“${record.place}” 추억을 삭제할까요?\n삭제한 기록은 되돌릴 수 없어요.`,
+    )
+
+    if (!shouldDelete) {
+      return
+    }
+
+    setDeletingRecordId(record.id)
+    setDeleteError('')
+
+    try {
+      await onDeleteMemory(record)
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : '여행 기록을 삭제하지 못했어요.',
+      )
+    } finally {
+      setDeletingRecordId('')
+    }
+  }
   if (records.length === 0) {
     return (
       <section className="tab-page">
@@ -446,9 +483,11 @@ function MemoriesPage({
           우리의 추억
         </span>
 
-        <span className="tab-main-icon">
-          📷
-        </span>
+        <img
+          className="empty-memory-mascot"
+          src={`${import.meta.env.BASE_URL}images/mascots/mascot-sitting.png`}
+          alt="나란히 앉아 있는 오리와 다람쥐"
+        />
 
         <h2>아직 저장된 추억이 없어요</h2>
 
@@ -489,6 +528,12 @@ function MemoriesPage({
         </button>
       </div>
 
+      {deleteError && (
+        <p className="memory-delete-error">
+          {deleteError}
+        </p>
+      )}
+
       <div className="memory-list">
         {records.map((record) => (
           <article
@@ -510,14 +555,32 @@ function MemoriesPage({
             )}
 
             <div className="memory-card-body">
-              <div className="memory-meta">
-                <span className="memory-region">
-                  📍 {record.region}
-                </span>
+              <div className="memory-card-heading">
+                <div className="memory-meta">
+                  <span className="memory-region">
+                    📍 {record.region}
+                  </span>
 
-                <time dateTime={record.date}>
-                  {record.date}
-                </time>
+                  <time dateTime={record.date}>
+                    {record.date}
+                  </time>
+                </div>
+
+                <button
+                  className="memory-delete-button"
+                  type="button"
+                  disabled={
+                    deletingRecordId === record.id
+                  }
+                  onClick={() => {
+                    void handleDelete(record)
+                  }}
+                  aria-label={`${record.place} 추억 삭제`}
+                >
+                  {deletingRecordId === record.id
+                    ? '삭제 중...'
+                    : '삭제'}
+                </button>
               </div>
 
               <h3>{record.place}</h3>
@@ -1038,6 +1101,19 @@ function App() {
     setActiveTab('memories')
   }
 
+  const removeRecord = async (
+    record: CloudTravelRecord,
+  ) => {
+    await deleteTravelRecord(record)
+
+    setRecords((currentRecords) =>
+      currentRecords.filter(
+        (currentRecord) =>
+          currentRecord.id !== record.id,
+      ),
+    )
+  }
+
   const renderActiveTab = () => {
     if (isLoadingRecords) {
       return (
@@ -1104,6 +1180,7 @@ function App() {
             onAddMemory={() => {
               setActiveTab('add')
             }}
+            onDeleteMemory={removeRecord}
           />
         )
 

@@ -267,3 +267,37 @@ export async function createTravelRecord(
     throw error
   }
 }
+
+export async function deleteTravelRecord(
+  record: Pick<
+    CloudTravelRecord,
+    'id' | 'photoPath'
+  >,
+): Promise<void> {
+  const { error } = await supabase
+    .from('travel_records')
+    .delete()
+    .eq('id', record.id)
+
+  if (error) {
+    throw new Error(
+      `여행 기록 삭제 실패: ${error.message}`,
+    )
+  }
+
+  if (!record.photoPath) {
+    return
+  }
+
+  const { error: removeError } =
+    await supabase.storage
+      .from(BUCKET_NAME)
+      .remove([record.photoPath])
+
+  if (removeError) {
+    console.error(
+      '삭제된 기록의 사진 정리 실패:',
+      removeError.message,
+    )
+  }
+}

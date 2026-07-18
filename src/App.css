@@ -1219,3 +1219,50 @@ button {
     margin: 0 auto;
   }
 }
+
+/* Memory delete controls */
+
+.memory-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memory-card-heading .memory-meta {
+  flex: 1;
+}
+
+.memory-delete-button {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border: 1.5px solid #d8aaa2;
+  border-radius: 14px 11px 15px 12px;
+  background: #fff8f6;
+  color: #9a5b52;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.memory-delete-button:hover {
+  background: #ffece8;
+}
+
+.memory-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.memory-delete-error {
+  margin: 0 0 14px;
+  padding: 11px 14px;
+  border: 1.5px solid #e9aaa3;
+  border-radius: 16px;
+  background: #fff1ef;
+  color: #985149;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

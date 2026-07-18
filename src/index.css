@@ -414,3 +414,53 @@ img {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Additional mascot variations */
+
+.wishlist-mascot {
+  display: block;
+  width: min(235px, 72%);
+  margin: 14px auto 8px;
+  object-fit: contain;
+}
+
+.wishlist-success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 2px solid #efb6b0;
+  border-radius: 22px 18px 24px 19px;
+  background: #fff8f5;
+  color: #70483f;
+  box-shadow: 0 5px 0 rgba(177, 113, 94, 0.12);
+}
+
+.wishlist-success img {
+  width: 82px;
+  height: 82px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.wishlist-empty-mascot {
+  display: block;
+  width: min(210px, 70%);
+  margin: 0 auto 8px;
+  object-fit: contain;
+}
+
+.empty-memory-mascot {
+  display: block;
+  width: min(235px, 72%);
+  margin: 4px auto 12px;
+  object-fit: contain;
+}
+
+@media (min-width: 700px) {
+  .wishlist-mascot,
+  .empty-memory-mascot {
+    width: 245px;
+  }
+}

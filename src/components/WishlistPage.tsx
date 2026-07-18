@@ -110,6 +110,9 @@ function WishlistPage() {
   const [errorMessage, setErrorMessage] =
     useState('')
 
+  const [successMessage, setSuccessMessage] =
+    useState('')
+
   useEffect(() => {
     let isMounted = true
 
@@ -160,6 +163,7 @@ function WishlistPage() {
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault()
+    setSuccessMessage('')
 
     const trimmedDestination =
       destination.trim()
@@ -193,6 +197,9 @@ function WishlistPage() {
       setDestination('')
       setTargetDate('')
       setMemo('')
+      setSuccessMessage(
+        '다음 여행을 저장했어요!',
+      )
     } catch (error) {
       setErrorMessage(
         getErrorMessage(
@@ -286,6 +293,12 @@ function WishlistPage() {
           하나씩 모아봐요.
         </p>
 
+        <img
+          className="wishlist-mascot"
+          src={`${import.meta.env.BASE_URL}images/mascots/mascot-travel-ready.png`}
+          alt="여행을 준비하는 오리와 다람쥐"
+        />
+
         <div className="wishlist-summary">
           <span>💗</span>
           <strong>
@@ -353,6 +366,22 @@ function WishlistPage() {
         </button>
       </form>
 
+      {successMessage && (
+        <div
+          className="wishlist-success"
+          role="status"
+        >
+          <img
+            src={`${import.meta.env.BASE_URL}images/mascots/mascot-high-five.png`}
+            alt="하이파이브하는 오리와 다람쥐"
+          />
+
+          <strong>
+            {successMessage}
+          </strong>
+        </div>
+      )}
+
       {errorMessage && (
         <p className="wishlist-error">
           {errorMessage}
@@ -365,7 +394,12 @@ function WishlistPage() {
         </div>
       ) : sortedItems.length === 0 ? (
         <div className="wishlist-empty">
-          <span>🧳</span>
+          <img
+            className="wishlist-empty-mascot"
+            src={`${import.meta.env.BASE_URL}images/mascots/mascot-empty-album.png`}
+            alt="빈 앨범을 들고 있는 오리와 다람쥐"
+          />
+
           <strong>
             아직 저장한 여행지가 없어요
           </strong>
