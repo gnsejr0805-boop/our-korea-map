@@ -6,6 +6,8 @@ import type {
 import type { Session } from '@supabase/supabase-js'
 import './App.css'
 import LoginPage from './components/LoginPage'
+import WishlistPage from './components/WishlistPage'
+import UsPage from './components/UsPage'
 import { supabase } from './lib/supabase'
 import {
   createTravelRecord,
@@ -289,12 +291,11 @@ function MapHome({
 
         <div className="character-picture">
           <img
-            src={`${import.meta.env.BASE_URL}images/duck-squirrel-crayon.png`}
-            alt="머리에 선글라스를 올린 노란 오리와 분홍 리본을 단 다람쥐"
+            src={`${import.meta.env.BASE_URL}images/mascots/mascot-map-planning.png`}
+            alt="지도를 펼쳐 놓고 함께 여행을 계획하는 오리와 다람쥐"
           />
         </div>
       </section>
-
       <section className="map-card">
         <div className="section-heading">
           <div>
@@ -892,44 +893,6 @@ function AddMemoryForm({
     </section>
   )
 }
-
-type EmptyTabProps = {
-  icon: string
-  label: string
-  title: string
-  description: string
-  note: string
-}
-
-function EmptyTab({
-  icon,
-  label,
-  title,
-  description,
-  note,
-}: EmptyTabProps) {
-  return (
-    <section className="tab-page">
-      <span className="tab-sticker">
-        {label}
-      </span>
-
-      <span className="tab-main-icon">
-        {icon}
-      </span>
-
-      <h2>{title}</h2>
-
-      <p>{description}</p>
-
-      <div className="placeholder-note">
-        <span>✏️</span>
-        <strong>{note}</strong>
-      </div>
-    </section>
-  )
-}
-
 function App() {
   const [session, setSession] =
     useState<Session | null>(null)
@@ -1155,27 +1118,9 @@ function App() {
         )
 
       case 'wishlist':
-        return (
-          <EmptyTab
-            icon="💗"
-            label="다음 여행"
-            title="누나와 가고 싶은 곳"
-            description="아직 가보지 못한 지역과 함께 하고 싶은 일을 저장하는 공간이에요."
-            note="가고 싶은 지역에 하트를 붙일 수 있게 만들 거예요."
-          />
-        )
-
+  return <WishlistPage />
       case 'us':
-        return (
-          <EmptyTab
-            icon="🐥"
-            label="우리 이야기"
-            title="오리와 다람쥐의 여행일기"
-            description="함께한 여행 수와 사진 수, 기념일을 한눈에 볼 수 있는 공간이에요."
-            note="우리 둘의 여행 통계를 보여줄 공간이에요."
-          />
-        )
-
+  return <UsPage records={records} />
       default:
         return null
     }

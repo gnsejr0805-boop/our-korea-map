@@ -94,8 +94,8 @@ function LoginPage({
       <section className="login-card">
         <div className="login-character">
           <img
-            src={`${import.meta.env.BASE_URL}images/duck-squirrel-crayon.png`}
-            alt="노란 오리와 분홍 리본 다람쥐"
+            src={`${import.meta.env.BASE_URL}images/mascots/mascot-wave.png`}
+            alt="손을 흔들며 인사하는 오리와 다람쥐"
           />
         </div>
 
