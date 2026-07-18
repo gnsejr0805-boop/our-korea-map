@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type {
   ChangeEvent,
   FormEvent,
@@ -20,6 +20,15 @@ import type {
   NewCloudTravelRecord,
 } from './lib/travelRecords'
 import {
+  getTravelMediaType,
+  MAX_IMAGE_BYTES,
+  MAX_MEDIA_FILES,
+  MAX_VIDEO_BYTES,
+} from './lib/travelMedia'
+import type {
+  TravelMediaType,
+} from './lib/travelMedia'
+import {
   districtsByRegion,
 } from './lib/koreaAdministrativeAreas'
 import type {
@@ -36,6 +45,13 @@ type TabId =
 type CompressedPhoto = {
   file: File
   previewUrl: string
+}
+
+type SelectedMedia = {
+  id: string
+  file: File
+  previewUrl: string
+  mediaType: TravelMediaType
 }
 
 const regions = [
@@ -500,20 +516,52 @@ function MemoriesPage({
             className="memory-card"
             key={record.id}
           >
-            {record.imageUrl ? (
+            {record.media.length > 0 ? (
+              <div className="memory-media-gallery">
+                {record.media.map((media) => (
+                  <div
+                    className="memory-media-item"
+                    key={media.id}
+                  >
+                    {media.mediaType === 'image' ? (
+                      <img
+                        src={media.url}
+                        alt={
+                          record.place + '에서 남긴 사진'
+                        }
+                      />
+                    ) : (
+                      <video
+                        src={media.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    )}
+                  </div>
+                ))}
+
+                {record.media.length > 1 && (
+                  <span className="memory-media-count">
+                    1 / {record.media.length}
+                  </span>
+                )}
+              </div>
+            ) : record.imageUrl ? (
               <div className="memory-photo">
                 <img
                   src={record.imageUrl}
-                  alt={`${record.place}에서 남긴 추억`}
+                  alt={
+                    record.place + '에서 남긴 추억'
+                  }
                 />
               </div>
             ) : (
               <div className="memory-photo-placeholder">
                 <span>📷</span>
-                <small>사진 없음</small>
+                <small>사진·동영상 없음</small>
               </div>
             )}
-
             <div className="memory-card-body">
               <div className="memory-card-heading">
                 <div className="memory-meta">
@@ -590,11 +638,11 @@ function AddMemoryForm({
   const availableDistricts =
     districtsByRegion[region] ?? []
 
-  const [photoFile, setPhotoFile] =
-    useState<File | null>(null)
+  const [selectedMedia, setSelectedMedia] =
+    useState<SelectedMedia[]>([])
 
-  const [imagePreview, setImagePreview] =
-    useState('')
+  const previewUrlsRef =
+    useRef<string[]>([])
 
   const [fileInputKey, setFileInputKey] =
     useState(0)
@@ -606,82 +654,153 @@ function AddMemoryForm({
     useState(false)
 
   useEffect(() => {
+    const previewUrls =
+      previewUrlsRef.current
+
     return () => {
-      if (imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview)
+      for (const previewUrl of previewUrls) {
+        URL.revokeObjectURL(previewUrl)
       }
     }
-  }, [imagePreview])
+  }, [])
 
-  const removeSelectedPhoto = () => {
-    setPhotoFile(null)
-    setImagePreview('')
+  const removeSelectedMedia = (
+    mediaId: string,
+  ) => {
+    setSelectedMedia((currentMedia) => {
+      const removedMedia =
+        currentMedia.find(
+          (media) => media.id === mediaId,
+        )
 
-    setFileInputKey(
-      (currentKey) => currentKey + 1,
-    )
+      if (removedMedia) {
+        URL.revokeObjectURL(
+          removedMedia.previewUrl,
+        )
+
+        previewUrlsRef.current =
+          previewUrlsRef.current.filter(
+            (previewUrl) =>
+              previewUrl !==
+              removedMedia.previewUrl,
+          )
+      }
+
+      return currentMedia.filter(
+        (media) => media.id !== mediaId,
+      )
+    })
   }
 
-  const handleImageChange = async (
+  const handleMediaChange = async (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
     const input = event.currentTarget
-    const file = input.files?.[0]
+
+    const files = Array.from(
+      input.files ?? [],
+    )
 
     setErrorMessage('')
 
-    if (!file) {
-      removeSelectedPhoto()
+    if (files.length === 0) {
       return
     }
 
-    if (!file.type.startsWith('image/')) {
+    if (
+      selectedMedia.length + files.length >
+      MAX_MEDIA_FILES
+    ) {
       setErrorMessage(
-        '사진 파일만 선택할 수 있어요.',
+        '사진과 동영상은 합쳐서 최대 ' +
+          MAX_MEDIA_FILES +
+          '개까지 선택할 수 있어요.',
       )
 
       input.value = ''
       return
     }
 
-    const maximumOriginalSize =
-      10 * 1024 * 1024
-
-    if (file.size > maximumOriginalSize) {
-      setErrorMessage(
-        '10MB 이하 사진을 선택해주세요.',
-      )
-
-      input.value = ''
-      return
-    }
+    const nextMedia: SelectedMedia[] = []
 
     try {
-      const compressedPhoto =
-        await compressImage(file)
+      for (const file of files) {
+        const mediaType =
+          getTravelMediaType(file)
 
-      setPhotoFile(compressedPhoto.file)
+        let uploadFile = file
+        let previewUrl = ''
 
-      setImagePreview(
-        compressedPhoto.previewUrl,
+        if (mediaType === 'image') {
+          if (file.size > MAX_IMAGE_BYTES) {
+            throw new Error(
+              file.name +
+                ': 사진은 10MB 이하여야 해요.',
+            )
+          }
+
+          const compressedPhoto =
+            await compressImage(file)
+
+          uploadFile = compressedPhoto.file
+          previewUrl =
+            compressedPhoto.previewUrl
+        } else {
+          if (file.size > MAX_VIDEO_BYTES) {
+            throw new Error(
+              file.name +
+                ': 동영상은 50MB 이하여야 해요.',
+            )
+          }
+
+          previewUrl =
+            URL.createObjectURL(file)
+        }
+
+        previewUrlsRef.current.push(
+          previewUrl,
+        )
+
+        nextMedia.push({
+          id: crypto.randomUUID(),
+          file: uploadFile,
+          previewUrl,
+          mediaType,
+        })
+      }
+
+      setSelectedMedia((currentMedia) => [
+        ...currentMedia,
+        ...nextMedia,
+      ])
+
+      setFileInputKey(
+        (currentKey) => currentKey + 1,
       )
     } catch (error) {
-      console.error(
-        '사진 압축 중 오류가 발생했습니다.',
-        error,
-      )
+      for (const media of nextMedia) {
+        URL.revokeObjectURL(
+          media.previewUrl,
+        )
+
+        previewUrlsRef.current =
+          previewUrlsRef.current.filter(
+            (previewUrl) =>
+              previewUrl !==
+              media.previewUrl,
+          )
+      }
 
       setErrorMessage(
         getErrorMessage(
           error,
-          '사진을 불러오지 못했어요.',
+          '파일을 불러오지 못했어요.',
         ),
       )
-
+    } finally {
       input.value = ''
     }
   }
-
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
@@ -701,12 +820,6 @@ function AddMemoryForm({
       return
     }
 
-    if (!district) {
-      setErrorMessage(
-        '시·군·구를 선택해주세요.',
-      )
-      return
-    }
 
     if (!trimmedPlace) {
       setErrorMessage(
@@ -732,7 +845,10 @@ function AddMemoryForm({
         place: trimmedPlace,
         date,
         comment: trimmedComment,
-        photoFile,
+        photoFile: null,
+        mediaFiles: selectedMedia.map(
+          (media) => media.file,
+        ),
       })
     } catch (error) {
       console.error(
@@ -803,7 +919,7 @@ function AddMemoryForm({
         <label className="form-field">
           <span className="field-label">
             시·군·구
-            <strong>필수</strong>
+            <em>선택</em>
           </span>
 
           <select
@@ -876,47 +992,90 @@ function AddMemoryForm({
 
         <div className="form-field">
           <span className="field-label">
-            대표 사진
+            사진·동영상
             <em>선택</em>
           </span>
 
-          <label className="photo-upload">
+          <label className="photo-upload media-upload">
             <input
               key={fileInputKey}
               type="file"
-              accept="image/*"
-              disabled={isSaving}
-              onChange={handleImageChange}
+              multiple
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+              disabled={
+                isSaving ||
+                selectedMedia.length >=
+                  MAX_MEDIA_FILES
+              }
+              onChange={handleMediaChange}
             />
 
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="선택한 사진 미리보기"
-              />
-            ) : (
-              <span className="photo-upload-empty">
-                <strong>📷</strong>
-                <span>사진 선택하기</span>
-                <small>
-                  10MB 이하 사진 1장
-                </small>
+            <span className="photo-upload-empty">
+              <strong>🎞️</strong>
+              <span>
+                사진·동영상 추가하기
               </span>
-            )}
+              <small>
+                최대 10개 · 사진 10MB ·
+                동영상 50MB
+              </small>
+            </span>
           </label>
 
-          {imagePreview && (
-            <button
-              className="remove-photo-button"
-              type="button"
-              disabled={isSaving}
-              onClick={removeSelectedPhoto}
-            >
-              선택한 사진 지우기
-            </button>
+          {selectedMedia.length > 0 && (
+            <>
+              <div className="selected-media-grid">
+                {selectedMedia.map((media) => (
+                  <div
+                    className="selected-media-item"
+                    key={media.id}
+                  >
+                    {media.mediaType === 'image' ? (
+                      <img
+                        src={media.previewUrl}
+                        alt={media.file.name}
+                      />
+                    ) : (
+                      <video
+                        src={media.previewUrl}
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    )}
+
+                    <span className="selected-media-type">
+                      {media.mediaType === 'image'
+                        ? '사진'
+                        : '동영상'}
+                    </span>
+
+                    <button
+                      className="selected-media-remove"
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() => {
+                        removeSelectedMedia(
+                          media.id,
+                        )
+                      }}
+                      aria-label={
+                        media.file.name + ' 제거'
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <small className="media-selection-count">
+                {selectedMedia.length} /
+                {MAX_MEDIA_FILES}개 선택됨
+              </small>
+            </>
           )}
         </div>
-
         <label className="form-field">
           <span className="field-label">
             우리의 한마디

@@ -1,4 +1,12 @@
 import { supabase } from './supabase'
+import {
+  deleteTravelMediaFiles,
+  fetchTravelMedia,
+  uploadTravelMedia,
+} from './travelMedia'
+import type {
+  CloudTravelMedia,
+} from './travelMedia'
 
 const BUCKET_NAME = 'travel-photos'
 
@@ -34,6 +42,7 @@ export type CloudTravelRecord = {
   comment: string
   photoPath: string
   imageUrl: string
+  media: CloudTravelMedia[]
   createdAt: string
 }
 
@@ -44,11 +53,13 @@ export type NewCloudTravelRecord = {
   date: string
   comment: string
   photoFile: File | null
+  mediaFiles?: File[]
 }
 
 function convertRow(
   row: TravelRecordRow,
   imageUrl = '',
+  media: CloudTravelMedia[] = [],
 ): CloudTravelRecord {
   return {
     id: row.id,
@@ -59,6 +70,7 @@ function convertRow(
     comment: row.comment ?? '',
     photoPath: row.photo_path ?? '',
     imageUrl,
+    media,
     createdAt: row.created_at,
   }
 }
@@ -195,6 +207,29 @@ export async function fetchTravelRecords(): Promise<
   const rows =
     (data ?? []) as TravelRecordRow[]
 
+  const media = await fetchTravelMedia(
+    rows.map((row) => row.id),
+  )
+
+  const mediaByRecordId = new Map<
+    string,
+    CloudTravelMedia[]
+  >()
+
+  for (const mediaItem of media) {
+    const recordMedia =
+      mediaByRecordId.get(
+        mediaItem.recordId,
+      ) ?? []
+
+    recordMedia.push(mediaItem)
+
+    mediaByRecordId.set(
+      mediaItem.recordId,
+      recordMedia,
+    )
+  }
+
   return Promise.all(
     rows.map(async (row) => {
       const imageUrl =
@@ -202,7 +237,11 @@ export async function fetchTravelRecords(): Promise<
           row.photo_path,
         )
 
-      return convertRow(row, imageUrl)
+      return convertRow(
+        row,
+        imageUrl,
+        mediaByRecordId.get(row.id) ?? [],
+      )
     }),
   )
 }
@@ -211,6 +250,7 @@ export async function createTravelRecord(
   input: NewCloudTravelRecord,
 ): Promise<CloudTravelRecord> {
   let uploadedPhotoPath: string | null = null
+  let createdRecordId = ''
 
   try {
     if (input.photoFile) {
@@ -249,14 +289,41 @@ export async function createTravelRecord(
     }
 
     const row = data as TravelRecordRow
+    createdRecordId = row.id
+
+    const media = input.mediaFiles?.length
+      ? await uploadTravelMedia(
+          row.id,
+          input.mediaFiles,
+        )
+      : []
 
     const imageUrl =
       await createSignedImageUrl(
         row.photo_path,
       )
 
-    return convertRow(row, imageUrl)
+    return convertRow(
+      row,
+      imageUrl,
+      media,
+    )
   } catch (error) {
+    if (createdRecordId) {
+      const { error: cleanupError } =
+        await supabase
+          .from('travel_records')
+          .delete()
+          .eq('id', createdRecordId)
+
+      if (cleanupError) {
+        console.error(
+          '생성된 기록 정리 실패:',
+          cleanupError.message,
+        )
+      }
+    }
+
     if (uploadedPhotoPath) {
       const { error: removeError } =
         await supabase.storage
@@ -281,6 +348,8 @@ export async function deleteTravelRecord(
     'id' | 'photoPath'
   >,
 ): Promise<void> {
+  await deleteTravelMediaFiles(record.id)
+
   const { error } = await supabase
     .from('travel_records')
     .delete()
