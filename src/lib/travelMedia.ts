@@ -356,6 +356,7 @@ export async function uploadTravelMedia(
   onProgress?: (
     progress: MediaUploadProgress,
   ) => void,
+  startingSortOrder = 0,
 ): Promise<CloudTravelMedia[]> {
   validateTravelMediaFiles(files)
 
@@ -426,7 +427,7 @@ export async function uploadTravelMedia(
             storage_path: storagePath,
             mime_type: file.type,
             original_name: file.name,
-            sort_order: index,
+            sort_order: startingSortOrder + index,
           })
           .select(
             `
@@ -500,6 +501,68 @@ export async function uploadTravelMedia(
   }
 }
 
+export async function deleteTravelMediaItems(
+  recordId: string,
+  mediaIds: string[],
+): Promise<void> {
+  if (mediaIds.length === 0) {
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('travel_record_media')
+    .select('id, storage_path')
+    .eq('record_id', recordId)
+    .in('id', mediaIds)
+
+  if (error) {
+    throw new Error(
+      `삭제할 미디어 확인 실패: ${error.message}`,
+    )
+  }
+
+  const rows = (data ?? []) as Array<{
+    id: string
+    storage_path: string
+  }>
+
+  if (rows.length === 0) {
+    return
+  }
+
+  const validIds = rows.map(
+    (row) => row.id,
+  )
+
+  const { error: deleteRowsError } =
+    await supabase
+      .from('travel_record_media')
+      .delete()
+      .eq('record_id', recordId)
+      .in('id', validIds)
+
+  if (deleteRowsError) {
+    throw new Error(
+      `미디어 정보 삭제 실패: ${deleteRowsError.message}`,
+    )
+  }
+
+  const { error: deleteFilesError } =
+    await supabase.storage
+      .from(BUCKET_NAME)
+      .remove(
+        rows.map(
+          (row) => row.storage_path,
+        ),
+      )
+
+  if (deleteFilesError) {
+    console.error(
+      '미디어 파일 정리 실패:',
+      deleteFilesError.message,
+    )
+  }
+}
 export async function deleteTravelMediaFiles(
   recordId: string,
 ): Promise<void> {

@@ -9,6 +9,7 @@ import LoginPage from './components/LoginPage'
 import WishlistPage from './components/WishlistPage'
 import UsPage from './components/UsPage'
 import KoreaTravelMap from './components/KoreaTravelMap'
+import EditMemoryForm from './components/EditMemoryForm'
 import { supabase } from './lib/supabase'
 import {
   createTravelRecord,
@@ -415,18 +416,25 @@ type MemoriesPageProps = {
   onDeleteMemory: (
     record: CloudTravelRecord,
   ) => Promise<void>
+  onUpdateMemory: (
+    record: CloudTravelRecord,
+  ) => void
 }
 
 function MemoriesPage({
   records,
   onAddMemory,
   onDeleteMemory,
+  onUpdateMemory,
 }: MemoriesPageProps) {
   const [deletingRecordId, setDeletingRecordId] =
     useState('')
 
   const [deleteError, setDeleteError] =
     useState('')
+
+  const [editingRecord, setEditingRecord] =
+    useState<CloudTravelRecord | null>(null)
 
   const [lightboxPhotos, setLightboxPhotos] =
     useState<LightboxPhoto[]>([])
@@ -584,6 +592,21 @@ function MemoriesPage({
       setDeletingRecordId('')
     }
   }
+  if (editingRecord) {
+    return (
+      <EditMemoryForm
+        record={editingRecord}
+        onSaved={(updatedRecord) => {
+          onUpdateMemory(updatedRecord)
+          setEditingRecord(null)
+        }}
+        onCancel={() => {
+          setEditingRecord(null)
+        }}
+      />
+    )
+  }
+
   if (records.length === 0) {
     return (
       <section className="tab-page">
@@ -735,21 +758,37 @@ function MemoriesPage({
                   </time>
                 </div>
 
-                <button
-                  className="memory-delete-button"
-                  type="button"
-                  disabled={
-                    deletingRecordId === record.id
-                  }
-                  onClick={() => {
-                    void handleDelete(record)
-                  }}
-                  aria-label={`${record.place} 추억 삭제`}
-                >
-                  {deletingRecordId === record.id
-                    ? '삭제 중...'
-                    : '삭제'}
-                </button>
+                <div className="memory-card-actions">
+                  <button
+                    className="memory-edit-button"
+                    type="button"
+                    disabled={
+                      deletingRecordId === record.id
+                    }
+                    onClick={() => {
+                      setEditingRecord(record)
+                    }}
+                    aria-label={`${record.place} 추억 수정`}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    className="memory-delete-button"
+                    type="button"
+                    disabled={
+                      deletingRecordId === record.id
+                    }
+                    onClick={() => {
+                      void handleDelete(record)
+                    }}
+                    aria-label={`${record.place} 추억 삭제`}
+                  >
+                    {deletingRecordId === record.id
+                      ? '삭제 중...'
+                      : '삭제'}
+                  </button>
+                </div>
               </div>
 
               <h3>{record.place}</h3>
@@ -1590,6 +1629,26 @@ function App() {
               setActiveTab('add')
             }}
             onDeleteMemory={removeRecord}
+            onUpdateMemory={(updatedRecord) => {
+              setRecords((currentRecords) =>
+                currentRecords
+                  .map((record) =>
+                    record.id ===
+                    updatedRecord.id
+                      ? updatedRecord
+                      : record,
+                  )
+                  .sort(
+                    (first, second) =>
+                      second.date.localeCompare(
+                        first.date,
+                      ) ||
+                      second.createdAt.localeCompare(
+                        first.createdAt,
+                      ),
+                  ),
+              )
+            }}
           />
         )
 

@@ -1969,3 +1969,164 @@ button {
     right: 7px;
   }
 }
+
+/* Travel memory edit interface */
+
+.memory-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.memory-edit-button {
+  padding: 5px 9px;
+
+  color: #705847;
+  font-size: 0.62rem;
+  font-weight: 800;
+
+  background: #fff0bd;
+  border: 1px solid #bc9160;
+  border-radius: 999px;
+}
+
+.edit-existing-media-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.edit-existing-media-item {
+  position: relative;
+  overflow: hidden;
+
+  min-height: 130px;
+  background: #eadbc8;
+  border: 1.5px solid #876657;
+  border-radius: 13px;
+}
+
+.edit-existing-media-item img,
+.edit-existing-media-item video {
+  display: block;
+  width: 100%;
+  height: 145px;
+  object-fit: cover;
+}
+
+.edit-existing-media-item.removed img,
+.edit-existing-media-item.removed video {
+  opacity: 0.25;
+  filter: grayscale(0.9);
+}
+
+.edit-existing-media-item.removed::after {
+  content: '삭제 예정';
+
+  position: absolute;
+  inset: 0;
+
+  display: grid;
+  place-items: center;
+
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 800;
+
+  background: rgba(72, 41, 41, 0.4);
+  pointer-events: none;
+}
+
+.edit-existing-media-label {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  z-index: 2;
+
+  padding: 4px 7px;
+
+  color: #ffffff;
+  font-size: 0.56rem;
+  font-weight: 800;
+
+  background: rgba(62, 43, 38, 0.75);
+  border-radius: 999px;
+}
+
+.edit-media-toggle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+
+  padding: 5px 8px;
+
+  color: #ffffff;
+  font-size: 0.56rem;
+  font-weight: 800;
+
+  background: rgba(142, 65, 65, 0.88);
+  border-radius: 999px;
+}
+
+.edit-existing-media-item.removed
+  .edit-media-toggle {
+  background: rgba(64, 96, 69, 0.92);
+}
+
+.edit-media-empty {
+  margin: 0;
+  padding: 17px;
+
+  color: #95766b;
+  font-size: 0.67rem;
+  text-align: center;
+
+  background: #f7ead8;
+  border: 1px dashed #c5a38b;
+  border-radius: 13px;
+}
+
+.edit-form-actions {
+  display: grid;
+  grid-template-columns: 0.8fr 1.4fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.edit-cancel-button,
+.edit-save-button {
+  min-height: 47px;
+  padding: 11px;
+
+  font-family: inherit;
+  font-size: 0.73rem;
+  font-weight: 800;
+
+  border-radius: 14px;
+}
+
+.edit-cancel-button {
+  color: #775f55;
+
+  background: #f0e3d2;
+  border: 1.5px solid #b99a87;
+}
+
+.edit-save-button {
+  color: #ffffff;
+
+  background: #ad6e78;
+  border: 1.5px solid #81515a;
+  box-shadow:
+    0 5px 0 rgba(112, 70, 77, 0.2);
+}
+
+.edit-cancel-button:disabled,
+.edit-save-button:disabled,
+.edit-media-toggle:disabled,
+.memory-edit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

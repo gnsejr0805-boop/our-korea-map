@@ -1,7 +1,9 @@
 import { supabase } from './supabase'
 import {
   deleteTravelMediaFiles,
+  deleteTravelMediaItems,
   fetchTravelMedia,
+  MAX_MEDIA_FILES,
   uploadTravelMedia,
 } from './travelMedia'
 import type {
@@ -54,6 +56,18 @@ export type NewCloudTravelRecord = {
   comment: string
   photoFile: File | null
   mediaFiles?: File[]
+}
+
+export type UpdateCloudTravelRecord = {
+  id: string
+  region: string
+  district?: string
+  place: string
+  date: string
+  comment: string
+  mediaFiles?: File[]
+  removedMediaIds?: string[]
+  removeLegacyPhoto?: boolean
 }
 
 function convertRow(
@@ -342,6 +356,200 @@ export async function createTravelRecord(
   }
 }
 
+export async function updateTravelRecord(
+  input: UpdateCloudTravelRecord,
+): Promise<CloudTravelRecord> {
+  const { data: currentData, error: currentError } =
+    await supabase
+      .from('travel_records')
+      .select(
+        `
+          id,
+          region,
+          district,
+          place,
+          visited_on,
+          comment,
+          photo_path,
+          created_at
+        `,
+      )
+      .eq('id', input.id)
+      .single()
+
+  if (currentError) {
+    throw new Error(
+      `수정할 여행 기록 확인 실패: ${currentError.message}`,
+    )
+  }
+
+  const currentRow =
+    currentData as TravelRecordRow
+
+  const currentMedia = await fetchTravelMedia([
+    input.id,
+  ])
+
+  const requestedRemovedIds = new Set(
+    input.removedMediaIds ?? [],
+  )
+
+  const validRemovedIds = currentMedia
+    .filter((mediaItem) =>
+      requestedRemovedIds.has(mediaItem.id),
+    )
+    .map((mediaItem) => mediaItem.id)
+
+  const validRemovedIdSet = new Set(
+    validRemovedIds,
+  )
+
+  const remainingMedia = currentMedia.filter(
+    (mediaItem) =>
+      !validRemovedIdSet.has(mediaItem.id),
+  )
+
+  const newMediaFiles =
+    input.mediaFiles ?? []
+
+  const legacyPhotoCount =
+    currentRow.photo_path &&
+    !input.removeLegacyPhoto
+      ? 1
+      : 0
+
+  const finalMediaCount =
+    remainingMedia.length +
+    newMediaFiles.length +
+    legacyPhotoCount
+
+  if (finalMediaCount > MAX_MEDIA_FILES) {
+    throw new Error(
+      `사진과 동영상은 합쳐서 최대 ${MAX_MEDIA_FILES}개까지 저장할 수 있어요.`,
+    )
+  }
+
+  const nextSortOrder =
+    remainingMedia.length > 0
+      ? Math.max(
+          ...remainingMedia.map(
+            (mediaItem) =>
+              mediaItem.sortOrder,
+          ),
+        ) + 1
+      : 0
+
+  let uploadedMedia: CloudTravelMedia[] = []
+  let recordUpdateCompleted = false
+
+  try {
+    if (newMediaFiles.length > 0) {
+      uploadedMedia =
+        await uploadTravelMedia(
+          input.id,
+          newMediaFiles,
+          undefined,
+          nextSortOrder,
+        )
+    }
+
+    const { data, error } = await supabase
+      .from('travel_records')
+      .update({
+        region: input.region,
+        district: input.district || null,
+        place: input.place,
+        visited_on: input.date,
+        comment: input.comment || null,
+        photo_path: input.removeLegacyPhoto
+          ? null
+          : currentRow.photo_path,
+      })
+      .eq('id', input.id)
+      .select(
+        `
+          id,
+          region,
+          district,
+          place,
+          visited_on,
+          comment,
+          photo_path,
+          created_at
+        `,
+      )
+      .single()
+
+    if (error) {
+      throw new Error(
+        `여행 기록 수정 실패: ${error.message}`,
+      )
+    }
+
+    recordUpdateCompleted = true
+
+    if (validRemovedIds.length > 0) {
+      await deleteTravelMediaItems(
+        input.id,
+        validRemovedIds,
+      )
+    }
+
+    if (
+      input.removeLegacyPhoto &&
+      currentRow.photo_path
+    ) {
+      const { error: removeLegacyError } =
+        await supabase.storage
+          .from(BUCKET_NAME)
+          .remove([currentRow.photo_path])
+
+      if (removeLegacyError) {
+        console.error(
+          '기존 대표 사진 정리 실패:',
+          removeLegacyError.message,
+        )
+      }
+    }
+
+    const row = data as TravelRecordRow
+
+    const updatedMedia =
+      await fetchTravelMedia([input.id])
+
+    const imageUrl =
+      await createSignedImageUrl(
+        row.photo_path,
+      )
+
+    return convertRow(
+      row,
+      imageUrl,
+      updatedMedia,
+    )
+  } catch (error) {
+    if (
+      !recordUpdateCompleted &&
+      uploadedMedia.length > 0
+    ) {
+      try {
+        await deleteTravelMediaItems(
+          input.id,
+          uploadedMedia.map(
+            (mediaItem) => mediaItem.id,
+          ),
+        )
+      } catch (cleanupError) {
+        console.error(
+          '수정 실패 후 새 미디어 정리 실패:',
+          cleanupError,
+        )
+      }
+    }
+
+    throw error
+  }
+}
 export async function deleteTravelRecord(
   record: Pick<
     CloudTravelRecord,
