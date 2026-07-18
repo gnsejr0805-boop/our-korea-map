@@ -94,7 +94,7 @@ function LoginPage({
       <section className="login-card">
         <div className="login-character">
           <img
-            src="/images/duck-squirrel-crayon.png"
+            src={`${import.meta.env.BASE_URL}images/duck-squirrel-crayon.png`}
             alt="노란 오리와 분홍 리본 다람쥐"
           />
         </div>

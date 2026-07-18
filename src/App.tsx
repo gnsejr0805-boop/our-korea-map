@@ -289,7 +289,7 @@ function MapHome({
 
         <div className="character-picture">
           <img
-            src="/images/duck-squirrel-crayon.png"
+            src={`${import.meta.env.BASE_URL}images/duck-squirrel-crayon.png`}
             alt="머리에 선글라스를 올린 노란 오리와 분홍 리본을 단 다람쥐"
           />
         </div>
