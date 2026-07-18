@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap');
+
+:root {
+  font-family:
+    'Gowun Dodum',
+    'Malgun Gothic',
+    '맑은 고딕',
+    sans-serif;
+
+  color: #543f35;
+  background: #f8efe3;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #f8efe3;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(255, 191, 181, 0.24),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 90% 16%,
+      rgba(255, 220, 156, 0.23),
+      transparent 28%
+    ),
+    #f8efe3;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}/* ========================================
+   하단 메뉴 전환 화면
+======================================== */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+}
+
+.tab-page {
+  min-height: 610px;
+  padding: 35px 24px;
+  text-align: center;
+
+  background:
+    repeating-linear-gradient(
+      -8deg,
+      rgba(255, 255, 255, 0.16) 0,
+      rgba(255, 255, 255, 0.16) 3px,
+      transparent 3px,
+      transparent 11px
+    ),
+    #fff2dc;
+
+  border: 2px solid #6b5042;
+  border-radius: 27px;
+  box-shadow: 4px 5px 0 #dcc3a9;
+
+  animation: tab-page-open 0.22s ease-out;
+}
+
+.tab-sticker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 5px 12px;
+
+  color: #a65e58;
+  font-family: 'Jua', sans-serif;
+  font-size: 0.74rem;
+
+  background: #fff9ee;
+  border: 1.5px solid #d78e83;
+  border-radius: 999px;
+
+  transform: rotate(-1.5deg);
+}
+
+.tab-main-icon {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  margin: 48px auto 22px;
+
+  font-size: 3.3rem;
+
+  background: #ffd4c4;
+  border: 2px solid #6b5042;
+  border-radius:
+    47% 53% 44% 56% /
+    52% 43% 57% 48%;
+
+  box-shadow: 4px 5px 0 #d8ae99;
+  transform: rotate(-2deg);
+}
+
+.tab-page h2 {
+  margin: 0;
+
+  color: #50382f;
+  font-family: 'Jua', sans-serif;
+  font-size: 1.38rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.tab-page > p {
+  max-width: 290px;
+  margin: 13px auto 0;
+
+  color: #86635a;
+  font-size: 0.79rem;
+  font-weight: 600;
+  line-height: 1.75;
+  word-break: keep-all;
+}
+
+.placeholder-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 300px;
+  margin: 42px auto 0;
+  padding: 14px 15px;
+
+  color: #74544a;
+  text-align: left;
+
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 21px,
+      rgba(118, 83, 59, 0.08) 22px
+    ),
+    #fff9e9;
+
+  border: 2px dashed #b5866e;
+  border-radius: 17px;
+}
+
+.placeholder-note > span {
+  flex-shrink: 0;
+  font-size: 1.3rem;
+}
+
+.placeholder-note strong {
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.navigation-item {
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+
+.navigation-item:active {
+  transform: scale(0.92);
+}
+
+@keyframes tab-page-open {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
