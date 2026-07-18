@@ -54,6 +54,12 @@ type SelectedMedia = {
   mediaType: TravelMediaType
 }
 
+type LightboxPhoto = {
+  id: string
+  url: string
+  alt: string
+}
+
 const regions = [
   '서울',
   '부산',
@@ -422,6 +428,136 @@ function MemoriesPage({
   const [deleteError, setDeleteError] =
     useState('')
 
+  const [lightboxPhotos, setLightboxPhotos] =
+    useState<LightboxPhoto[]>([])
+
+  const [lightboxIndex, setLightboxIndex] =
+    useState(0)
+
+  const activeLightboxPhoto =
+    lightboxPhotos[lightboxIndex] ?? null
+
+  const closeLightbox = () => {
+    setLightboxPhotos([])
+    setLightboxIndex(0)
+  }
+
+  const openRecordPhoto = (
+    record: CloudTravelRecord,
+    selectedMediaId?: string,
+  ) => {
+    const photos: LightboxPhoto[] =
+      record.media
+        .filter(
+          (media) =>
+            media.mediaType === 'image' &&
+            Boolean(media.url),
+        )
+        .map((media) => ({
+          id: media.id,
+          url: media.url,
+          alt:
+            record.place + '에서 남긴 사진',
+        }))
+
+    if (
+      photos.length === 0 &&
+      record.imageUrl
+    ) {
+      photos.push({
+        id: 'legacy-' + record.id,
+        url: record.imageUrl,
+        alt:
+          record.place + '에서 남긴 추억',
+      })
+    }
+
+    if (photos.length === 0) {
+      return
+    }
+
+    const selectedIndex = selectedMediaId
+      ? photos.findIndex(
+          (photo) =>
+            photo.id === selectedMediaId,
+        )
+      : 0
+
+    setLightboxPhotos(photos)
+    setLightboxIndex(
+      selectedIndex >= 0 ? selectedIndex : 0,
+    )
+  }
+
+  const showPreviousPhoto = () => {
+    setLightboxIndex((currentIndex) =>
+      (
+        currentIndex -
+        1 +
+        lightboxPhotos.length
+      ) % lightboxPhotos.length,
+    )
+  }
+
+  const showNextPhoto = () => {
+    setLightboxIndex((currentIndex) =>
+      (currentIndex + 1) %
+      lightboxPhotos.length,
+    )
+  }
+
+  useEffect(() => {
+    if (lightboxPhotos.length === 0) {
+      return
+    }
+
+    const previousOverflow =
+      document.body.style.overflow
+
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === 'Escape') {
+        closeLightbox()
+        return
+      }
+
+      if (event.key === 'ArrowLeft') {
+        setLightboxIndex((currentIndex) =>
+          (
+            currentIndex -
+            1 +
+            lightboxPhotos.length
+          ) % lightboxPhotos.length,
+        )
+      }
+
+      if (event.key === 'ArrowRight') {
+        setLightboxIndex((currentIndex) =>
+          (currentIndex + 1) %
+          lightboxPhotos.length,
+        )
+      }
+    }
+
+    window.addEventListener(
+      'keydown',
+      handleKeyDown,
+    )
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow
+
+      window.removeEventListener(
+        'keydown',
+        handleKeyDown,
+      )
+    }
+  }, [lightboxPhotos.length])
+
   const handleDelete = async (
     record: CloudTravelRecord,
   ) => {
@@ -483,7 +619,8 @@ function MemoriesPage({
   }
 
   return (
-    <section className="memories-page">
+    <>
+      <section className="memories-page">
       <div className="memories-heading">
         <div>
           <span className="small-label">
@@ -524,12 +661,24 @@ function MemoriesPage({
                     key={media.id}
                   >
                     {media.mediaType === 'image' ? (
-                      <img
-                        src={media.url}
-                        alt={
-                          record.place + '에서 남긴 사진'
-                        }
-                      />
+                      <button
+                        className="memory-image-button"
+                        type="button"
+                        onClick={() => {
+                          openRecordPhoto(
+                            record,
+                            media.id,
+                          )
+                        }}
+                        aria-label="사진 크게 보기"
+                      >
+                        <img
+                          src={media.url}
+                          alt={
+                            record.place + '에서 남긴 사진'
+                          }
+                        />
+                      </button>
                     ) : (
                       <video
                         src={media.url}
@@ -549,12 +698,21 @@ function MemoriesPage({
               </div>
             ) : record.imageUrl ? (
               <div className="memory-photo">
-                <img
-                  src={record.imageUrl}
-                  alt={
-                    record.place + '에서 남긴 추억'
-                  }
-                />
+                <button
+                  className="memory-image-button"
+                  type="button"
+                  onClick={() => {
+                    openRecordPhoto(record)
+                  }}
+                  aria-label="사진 크게 보기"
+                >
+                  <img
+                    src={record.imageUrl}
+                    alt={
+                      record.place + '에서 남긴 추억'
+                    }
+                  />
+                </button>
               </div>
             ) : (
               <div className="memory-photo-placeholder">
@@ -607,7 +765,73 @@ function MemoriesPage({
           </article>
         ))}
       </div>
-    </section>
+      </section>
+
+      {activeLightboxPhoto && (
+        <div
+          className="photo-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="사진 크게 보기"
+          onClick={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeLightbox()
+            }
+          }}
+        >
+          <button
+            className="photo-lightbox-close"
+            type="button"
+            onClick={closeLightbox}
+            aria-label="전체화면 닫기"
+          >
+            ×
+          </button>
+
+          {lightboxPhotos.length > 1 && (
+            <button
+              className="photo-lightbox-navigation previous"
+              type="button"
+              onClick={showPreviousPhoto}
+              aria-label="이전 사진"
+            >
+              ‹
+            </button>
+          )}
+
+          <div
+            className="photo-lightbox-content"
+            onClick={(event) => {
+              event.stopPropagation()
+            }}
+          >
+            <img
+              src={activeLightboxPhoto.url}
+              alt={activeLightboxPhoto.alt}
+            />
+
+            <span className="photo-lightbox-counter">
+              {lightboxIndex + 1} /
+              {lightboxPhotos.length}
+            </span>
+          </div>
+
+          {lightboxPhotos.length > 1 && (
+            <button
+              className="photo-lightbox-navigation next"
+              type="button"
+              onClick={showNextPhoto}
+              aria-label="다음 사진"
+            >
+              ›
+            </button>
+          )}
+        </div>
+      )}
+    </>
   )
 }
 
