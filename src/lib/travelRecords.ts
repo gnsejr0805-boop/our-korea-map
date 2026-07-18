@@ -17,6 +17,7 @@ const ALLOWED_PHOTO_TYPES = [
 type TravelRecordRow = {
   id: string
   region: string
+  district: string | null
   place: string
   visited_on: string
   comment: string | null
@@ -27,6 +28,7 @@ type TravelRecordRow = {
 export type CloudTravelRecord = {
   id: string
   region: string
+  district: string
   place: string
   date: string
   comment: string
@@ -37,6 +39,7 @@ export type CloudTravelRecord = {
 
 export type NewCloudTravelRecord = {
   region: string
+  district?: string
   place: string
   date: string
   comment: string
@@ -50,6 +53,7 @@ function convertRow(
   return {
     id: row.id,
     region: row.region,
+    district: row.district ?? '',
     place: row.place,
     date: row.visited_on,
     comment: row.comment ?? '',
@@ -167,6 +171,7 @@ export async function fetchTravelRecords(): Promise<
       `
         id,
         region,
+        district,
         place,
         visited_on,
         comment,
@@ -217,6 +222,7 @@ export async function createTravelRecord(
       .from('travel_records')
       .insert({
         region: input.region,
+        district: input.district || null,
         place: input.place,
         visited_on: input.date,
         comment: input.comment || null,
@@ -226,6 +232,7 @@ export async function createTravelRecord(
         `
           id,
           region,
+          district,
           place,
           visited_on,
           comment,

@@ -1266,3 +1266,451 @@ button {
   font-size: 0.9rem;
   line-height: 1.5;
 }
+
+/* Clickable Korea travel map */
+
+.korea-map-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.korea-map-svg {
+  display: block;
+  width: 100%;
+  max-width: 270px;
+  overflow: visible;
+  filter: drop-shadow(4px 6px 0 rgba(91, 66, 51, 0.09));
+}
+
+.korea-map-shadow {
+  fill: none;
+  stroke: rgba(91, 66, 51, 0.09);
+  stroke-width: 11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.korea-map-region {
+  cursor: pointer;
+  outline: none;
+}
+
+.korea-map-shape {
+  stroke: #6b5042;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    fill 160ms ease,
+    stroke-width 160ms ease,
+    filter 160ms ease;
+}
+
+.korea-map-region:hover .korea-map-shape {
+  stroke-width: 3.2;
+  filter: brightness(1.04);
+}
+
+.korea-map-region:focus-visible .korea-map-shape {
+  stroke: #8f4249;
+  stroke-width: 4;
+}
+
+.korea-map-region.visited .korea-map-shape {
+  fill: #f1a9b2;
+}
+
+.korea-map-region.selected .korea-map-shape {
+  stroke: #973f47;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 5px rgba(218, 105, 117, 0.38));
+}
+
+.korea-map-label {
+  pointer-events: none;
+  fill: #563e34;
+  font-family: 'Jua', sans-serif;
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: rgba(255, 251, 241, 0.78);
+  stroke-width: 2.4px;
+  stroke-linejoin: round;
+}
+
+.korea-map-region.compact .korea-map-label {
+  font-size: 9px;
+  stroke-width: 1.8px;
+}
+
+.korea-map-heart {
+  pointer-events: none;
+  fill: #ed5f6d;
+  font-size: 16px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #fff9ed;
+  stroke-width: 3px;
+}
+
+.korea-map-island-dot {
+  fill: #c8deca;
+  stroke: #6b5042;
+  stroke-width: 1.5;
+}
+
+.map-tap-guide {
+  margin: -7px 0 0;
+  color: #987268;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.map-region-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 176px;
+  padding: 17px 13px;
+  text-align: center;
+  background: rgba(255, 250, 239, 0.74);
+  border: 1.5px dashed #aa8270;
+  border-radius: 23px 19px 25px 18px;
+}
+
+.selected-region-icon {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 1.8rem;
+}
+
+.selected-region-label {
+  margin-bottom: 2px;
+  color: #a27567;
+  font-size: 0.63rem;
+  font-weight: 800;
+}
+
+.map-region-panel strong {
+  color: #573f35;
+  font-family: 'Jua', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.map-region-panel p {
+  margin: 7px 0 0;
+  color: #89665c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.selected-region-action {
+  margin-top: 12px;
+  padding: 8px 13px;
+  color: #6f4443;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #f7c6c3;
+  border: 1.5px solid #78564b;
+  border-radius: 15px 12px 16px 13px;
+  box-shadow: 2px 2px 0 rgba(101, 73, 56, 0.13);
+  cursor: pointer;
+}
+
+.selected-region-action:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(101, 73, 56, 0.13);
+}
+
+@media (max-width: 560px) {
+  .korea-map-svg {
+    max-width: 240px;
+  }
+
+  .map-region-panel {
+    width: 100%;
+    min-height: 145px;
+  }
+}
+
+/* Accurate 17-region Korea map */
+
+.administrative-map-svg {
+  width: 100%;
+  max-width: 285px;
+  height: auto;
+  overflow: visible;
+  filter:
+    drop-shadow(4px 6px 0 rgba(91, 66, 51, 0.1));
+}
+
+.administrative-map-path {
+  fill: #f3d4bb;
+  stroke: #6b5042;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  outline: none;
+  transition:
+    fill 150ms ease,
+    stroke 150ms ease,
+    stroke-width 150ms ease,
+    filter 150ms ease;
+}
+
+.administrative-map-path:nth-child(4n + 2) {
+  fill: #c9dfcf;
+}
+
+.administrative-map-path:nth-child(4n + 3) {
+  fill: #efd59b;
+}
+
+.administrative-map-path:nth-child(4n + 4) {
+  fill: #c4dce0;
+}
+
+.administrative-map-path:hover {
+  stroke: #8d474d;
+  stroke-width: 3;
+  filter: brightness(1.04);
+}
+
+.administrative-map-path:focus-visible {
+  stroke: #953f48;
+  stroke-width: 4;
+}
+
+.administrative-map-path.visited {
+  fill: #f19eaa;
+  stroke: #9c4c55;
+}
+
+.administrative-map-path.selected {
+  stroke: #8e303e;
+  stroke-width: 4;
+  filter:
+    drop-shadow(
+      0 0 5px rgba(222, 91, 109, 0.55)
+    );
+}
+
+.map-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: #8b655c;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.map-legend-heart {
+  color: #ed6270;
+  font-size: 0.9rem;
+  line-height: 1;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+@media (max-width: 560px) {
+  .administrative-map-svg {
+    max-width: 260px;
+  }
+}
+
+/* Two-level Korea administrative map */
+
+.two-level-map {
+  align-items: start;
+}
+
+.drill-map-area {
+  min-width: 0;
+}
+
+.drill-map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-bottom: 8px;
+}
+
+.drill-map-toolbar > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.drill-map-toolbar span {
+  color: #9a7468;
+  font-size: 0.61rem;
+  font-weight: 800;
+}
+
+.drill-map-toolbar strong {
+  overflow: hidden;
+  color: #563f35;
+  font-family: 'Jua', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drill-map-step,
+.drill-map-back {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  color: #704d43;
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 800;
+  background: #f4d5bd;
+  border: 1.5px solid #78594c;
+  border-radius: 14px 11px 15px 12px;
+}
+
+.drill-map-back {
+  cursor: pointer;
+}
+
+.drill-map-svg {
+  display: block;
+  width: 100%;
+  max-width: 285px;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+  filter:
+    drop-shadow(4px 6px 0 rgba(91, 66, 51, 0.09));
+}
+
+.drill-map-svg.detail {
+  max-height: 345px;
+}
+
+.drill-map-region {
+  cursor: pointer;
+  outline: none;
+}
+
+.drill-map-shape {
+  fill: #f0d2b8;
+  stroke: #6b5042;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition:
+    fill 150ms ease,
+    stroke-width 150ms ease,
+    filter 150ms ease;
+}
+
+.drill-map-region:nth-child(4n + 2)
+  .drill-map-shape {
+  fill: #c9dfcf;
+}
+
+.drill-map-region:nth-child(4n + 3)
+  .drill-map-shape {
+  fill: #efd59b;
+}
+
+.drill-map-region:nth-child(4n + 4)
+  .drill-map-shape {
+  fill: #c3dce0;
+}
+
+.drill-map-shape.visited {
+  fill: #f19faa !important;
+  stroke: #9e4c55;
+}
+
+.drill-map-shape.selected {
+  fill: #f3a2ae !important;
+  stroke: #8e3441;
+  stroke-width: 3.5;
+  filter:
+    drop-shadow(
+      0 0 5px rgba(221, 91, 108, 0.48)
+    );
+}
+
+.drill-map-region:hover .drill-map-shape,
+.drill-map-region:focus-visible
+  .drill-map-shape {
+  stroke: #913e47;
+  stroke-width: 3;
+}
+
+.district-map-label {
+  pointer-events: none;
+  fill: #543d34;
+  font-family: 'Jua', sans-serif;
+  font-size: 8px;
+  paint-order: stroke;
+  stroke: rgba(255, 250, 238, 0.88);
+  stroke-width: 2.2px;
+  stroke-linejoin: round;
+}
+
+.sigungu-chip-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 145px;
+  margin-top: 10px;
+  padding: 3px;
+  overflow-y: auto;
+}
+
+.sigungu-chip {
+  min-width: 0;
+  padding: 7px 4px;
+  overflow: hidden;
+  color: #61463c;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #fff8ec;
+  border: 1.3px solid #aa8270;
+  border-radius: 12px 9px 13px 10px;
+  cursor: pointer;
+}
+
+.sigungu-chip.selected {
+  color: #813e46;
+  background: #f7bec3;
+  border-color: #984852;
+}
+
+@media (max-width: 560px) {
+  .drill-map-svg {
+    max-width: 265px;
+  }
+
+  .sigungu-chip-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .district-map-label {
+    font-size: 7px;
+  }
+}

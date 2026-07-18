@@ -8,6 +8,7 @@ import './App.css'
 import LoginPage from './components/LoginPage'
 import WishlistPage from './components/WishlistPage'
 import UsPage from './components/UsPage'
+import KoreaTravelMap from './components/KoreaTravelMap'
 import { supabase } from './lib/supabase'
 import {
   createTravelRecord,
@@ -18,6 +19,12 @@ import type {
   CloudTravelRecord,
   NewCloudTravelRecord,
 } from './lib/travelRecords'
+import {
+  districtsByRegion,
+} from './lib/koreaAdministrativeAreas'
+import type {
+  MapSelection,
+} from './lib/koreaAdministrativeAreas'
 
 type TabId =
   | 'map'
@@ -34,15 +41,23 @@ type CompressedPhoto = {
 const regions = [
   '서울',
   '부산',
-  '울산',
+  '대구',
   '인천',
+  '광주',
+  '대전',
+  '울산',
+  '세종',
   '경기',
   '강원',
-  '충청',
-  '전라',
-  '경상',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
   '제주',
 ]
+
 
 const navigationItems: Array<{
   id: TabId
@@ -232,7 +247,9 @@ function compressImage(
 
 type MapHomeProps = {
   records: CloudTravelRecord[]
-  onAddMemory: () => void
+  onAddMemory: (
+    selection?: MapSelection,
+  ) => void
   onOpenMemories: () => void
 }
 
@@ -248,6 +265,7 @@ function MapHome({
   const photoCount = records.filter(
     (record) => record.imageUrl,
   ).length
+
 
   const stats = [
     {
@@ -316,75 +334,11 @@ function MapHome({
           </button>
         </div>
 
-        <div className="map-preview">
-          <div className="region-grid">
-            {regions.map((region) => {
-              const isVisited =
-                visitedRegions.has(region)
-
-              return (
-                <button
-                  className={
-                    isVisited
-                      ? 'region-chip visited'
-                      : 'region-chip'
-                  }
-                  type="button"
-                  key={region}
-                >
-                  <span>{region}</span>
-
-                  {isVisited && (
-                    <span
-                      className="region-heart"
-                      aria-label="방문 완료"
-                    >
-                      ♥
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="empty-message">
-            {records.length === 0 ? (
-              <>
-                <span className="empty-pin">
-                  📍
-                </span>
-
-                <strong>
-                  아직 남긴 여행이 없어요
-                </strong>
-
-                <p>
-                  첫 추억을 등록하면
-                  <br />
-                  이곳에 하트가 생겨요.
-                </p>
-              </>
-            ) : (
-              <>
-                <span className="empty-pin">
-                  💗
-                </span>
-
-                <strong>
-                  벌써 {records.length}개의
-                  <br />
-                  추억을 남겼어요!
-                </strong>
-
-                <p>
-                  하트가 있는 지역은
-                  <br />
-                  함께 다녀온 곳이에요.
-                </p>
-              </>
-            )}
-          </div>
-        </div>
+        <KoreaTravelMap
+          records={records}
+          onAddMemory={onAddMemory}
+          onOpenMemories={onOpenMemories}
+        />
       </section>
 
       <section className="stats-section">
@@ -409,7 +363,9 @@ function MapHome({
       <button
         className="add-memory-button"
         type="button"
-        onClick={onAddMemory}
+        onClick={() => {
+          onAddMemory()
+        }}
       >
         <span className="add-icon">＋</span>
 
@@ -500,7 +456,9 @@ function MemoriesPage({
         <button
           className="empty-action-button"
           type="button"
-          onClick={onAddMemory}
+          onClick={() => {
+            onAddMemory()
+          }}
         >
           ＋ 첫 추억 남기기
         </button>
@@ -522,7 +480,9 @@ function MemoriesPage({
         <button
           className="small-add-button"
           type="button"
-          onClick={onAddMemory}
+          onClick={() => {
+            onAddMemory()
+          }}
         >
           ＋ 추가
         </button>
@@ -559,6 +519,9 @@ function MemoriesPage({
                 <div className="memory-meta">
                   <span className="memory-region">
                     📍 {record.region}
+                    {record.district
+                      ? ' · ' + record.district
+                      : ''}
                   </span>
 
                   <time dateTime={record.date}>
@@ -605,16 +568,27 @@ type AddMemoryFormProps = {
     record: NewCloudTravelRecord,
   ) => Promise<void>
   onCancel: () => void
+  initialRegion?: string
+  initialDistrict?: string
 }
 
 function AddMemoryForm({
   onSave,
   onCancel,
+  initialRegion = '',
+  initialDistrict = '',
 }: AddMemoryFormProps) {
-  const [region, setRegion] = useState('')
+  const [region, setRegion] =
+    useState(initialRegion)
+
+  const [district, setDistrict] =
+    useState(initialDistrict)
   const [place, setPlace] = useState('')
   const [date, setDate] = useState('')
   const [comment, setComment] = useState('')
+
+  const availableDistricts =
+    districtsByRegion[region] ?? []
 
   const [photoFile, setPhotoFile] =
     useState<File | null>(null)
@@ -727,6 +701,13 @@ function AddMemoryForm({
       return
     }
 
+    if (!district) {
+      setErrorMessage(
+        '시·군·구를 선택해주세요.',
+      )
+      return
+    }
+
     if (!trimmedPlace) {
       setErrorMessage(
         '장소 이름을 입력해주세요.',
@@ -747,6 +728,7 @@ function AddMemoryForm({
     try {
       await onSave({
         region,
+        district,
         place: trimmedPlace,
         date,
         comment: trimmedComment,
@@ -799,6 +781,7 @@ function AddMemoryForm({
             disabled={isSaving}
             onChange={(event) => {
               setRegion(event.target.value)
+              setDistrict('')
               setErrorMessage('')
             }}
           >
@@ -814,6 +797,39 @@ function AddMemoryForm({
                 {regionName}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label className="form-field">
+          <span className="field-label">
+            시·군·구
+            <strong>필수</strong>
+          </span>
+
+          <select
+            value={district}
+            disabled={isSaving || !region}
+            onChange={(event) => {
+              setDistrict(event.target.value)
+              setErrorMessage('')
+            }}
+          >
+            <option value="">
+              {region
+                ? '시·군·구를 선택해주세요'
+                : '지역을 먼저 선택해주세요'}
+            </option>
+
+            {availableDistricts.map(
+              (districtName) => (
+                <option
+                  value={districtName}
+                  key={districtName}
+                >
+                  {districtName}
+                </option>
+              ),
+            )}
           </select>
         </label>
 
@@ -968,6 +984,10 @@ function App() {
   const [activeTab, setActiveTab] =
     useState<TabId>('map')
 
+  const [pendingMapSelection,
+    setPendingMapSelection] =
+    useState<MapSelection | null>(null)
+
   const [records, setRecords] = useState<
     CloudTravelRecord[]
   >([])
@@ -1098,6 +1118,7 @@ function App() {
       ]),
     )
 
+    setPendingMapSelection(null)
     setActiveTab('memories')
   }
 
@@ -1164,7 +1185,11 @@ function App() {
         return (
           <MapHome
             records={records}
-            onAddMemory={() => {
+            onAddMemory={(selection) => {
+              setPendingMapSelection(
+                selection ?? null,
+              )
+
               setActiveTab('add')
             }}
             onOpenMemories={() => {
@@ -1178,6 +1203,7 @@ function App() {
           <MemoriesPage
             records={records}
             onAddMemory={() => {
+              setPendingMapSelection(null)
               setActiveTab('add')
             }}
             onDeleteMemory={removeRecord}
@@ -1188,7 +1214,14 @@ function App() {
         return (
           <AddMemoryForm
             onSave={saveRecord}
+            initialRegion={
+              pendingMapSelection?.region
+            }
+            initialDistrict={
+              pendingMapSelection?.district
+            }
             onCancel={() => {
+              setPendingMapSelection(null)
               setActiveTab('map')
             }}
           />
@@ -1279,6 +1312,10 @@ function App() {
                 type="button"
                 key={item.id}
                 onClick={() => {
+                  if (item.id === 'add') {
+                    setPendingMapSelection(null)
+                  }
+
                   setActiveTab(item.id)
                 }}
                 aria-current={
